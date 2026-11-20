@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+exec docker run --rm \
+  -v /tmp/dltf-qbft:/work \
+  -w /work \
+  hyperledger/besu:24.12.2 \
+  "$@"

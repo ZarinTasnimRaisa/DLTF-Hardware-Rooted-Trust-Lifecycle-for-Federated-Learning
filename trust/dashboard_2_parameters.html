@@ -1,0 +1,239 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>02 · Parameter justification</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#EFF2F1; --panel:#FFFFFF; --ink:#1B262C; --muted:#5F6E75;
+  --line:#D7DEDC; --t1:#0E7A63; --t2:#C08A2D; --t3:#5B6FA8;
+  --bad:#BE3E37; --aux:#2E6F8E;
+  --st-active:#CBE5D6; --st-prob:#F3DCA8; --st-ban:#F0B9B1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif;padding:0 20px 80px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+header{max-width:1020px;margin:0 auto;padding:44px 0 10px;
+  border-bottom:2px solid var(--ink)}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;
+  color:var(--muted);text-transform:uppercase}
+h1{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:30px;
+  letter-spacing:-.01em;margin:6px 0 8px}
+.sub{color:var(--muted);max-width:78ch}
+nav{margin:14px 0 4px;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+nav a{color:var(--aux);text-decoration:none;margin-right:18px}
+nav a.here{color:var(--ink);border-bottom:2px solid var(--ink)}
+main{max-width:1020px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:22px 24px 20px;margin-top:26px;box-shadow:0 1px 0 rgba(27,38,44,.05)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.card h2{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;
+  margin:4px 0 6px}
+.claim{color:var(--muted);margin-bottom:14px;max-width:80ch}
+.figure{position:relative;height:260px}
+.figure.tall{height:300px}.figure.short{height:200px}
+.verdict{margin-top:14px;border-left:3px solid var(--t1);background:#F4F8F6;
+  padding:10px 14px;font-size:13.5px}
+.verdict b{font-family:"IBM Plex Mono",monospace;font-size:12px;
+  letter-spacing:.1em;color:var(--t1)}
+.verdict.warn{border-left-color:var(--t2);background:#FBF6EA}
+.verdict.warn b{color:#8A6318}
+.flag{margin-top:14px;border:1px solid var(--t2);border-left:4px solid var(--t2);
+  background:#FBF3E0;padding:11px 14px;font-size:13px;border-radius:4px}
+.flag b{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+  color:#8A6318;display:block;margin-bottom:3px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:860px){.grid3,.grid2{grid-template-columns:1fr}}
+.tiercard{border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.tiercard h3{font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-bottom:8px}
+.tiercard table{width:100%;border-collapse:collapse;font-size:13px}
+.tiercard td{padding:3px 0;border-bottom:1px dashed var(--line)}
+.tiercard td:last-child{text-align:right;font-family:"IBM Plex Mono",monospace}
+.chip{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.08em;padding:2px 9px;border-radius:20px;border:1px solid;
+  vertical-align:2px;margin-left:8px}
+.chip.canonical{color:var(--t1);border-color:var(--t1);background:#EAF4F0}
+.chip.conventional{color:var(--aux);border-color:var(--aux);background:#EBF2F6}
+.chip.calibrated{color:#8A6318;border-color:var(--t2);background:#FBF3E0}
+.mech{font-size:13px;color:var(--muted);margin:2px 0 12px;max-width:82ch}
+.strip{display:flex;height:16px;border:1px solid var(--line);border-radius:3px;
+  overflow:hidden;margin-top:8px}
+.strip div{flex:1}
+.strip .A{background:var(--st-active)}.strip .P{background:var(--st-prob)}
+.strip .B{background:var(--st-ban)}
+.striplegend{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--muted);margin-top:5px;letter-spacing:.06em}
+.striplegend i{display:inline-block;width:10px;height:10px;border-radius:2px;
+  vertical-align:-1px;margin:0 4px 0 12px}
+.numline{position:relative;height:86px;margin:26px 8px 4px}
+.numline .rail{position:absolute;top:44px;left:0;right:0;height:6px;
+  border-radius:3px;background:linear-gradient(90deg,var(--st-ban) 0 30%,
+  var(--st-prob) 30% 50%,#E4EDE8 50% 75%,var(--st-active) 75% 100%)}
+.numline .tick{position:absolute;top:32px;width:2px;height:30px;background:var(--ink)}
+.numline .lab{position:absolute;top:0;transform:translateX(-50%);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:center;line-height:1.3}
+.numline .end{position:absolute;top:58px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--muted)}
+.canon{border:1px solid var(--t1);border-radius:6px;padding:13px 15px;background:#F2F8F5}
+.canon h3{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--t1)}
+.canon .cite{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+.canon p{font-size:12.5px;margin-top:6px;color:var(--ink)}
+footer{max-width:1020px;margin:40px auto 0;color:var(--muted);font-size:12.5px;
+  border-top:1px solid var(--line);padding-top:12px}
+</style></head><body>
+<header>
+ <div class="kicker">Hardware-rooted trust for federated learning · evaluation bench · v3</div>
+ <h1>Every constant, on a sweep</h1>
+ <p class="sub">Four values are canonical (a paper's own number). Each remaining value is swept: vary it, measure what the system does across the range, and read the computed verdict for why the shipped value holds. The shipped setting is marked ◀ on each x-axis.</p>
+ <nav>
+  <a href="dashboard_1_reputation.html" class="">01 · REPUTATION MECHANISM</a>
+  <a href="dashboard_2_parameters.html" class="here">02 · PARAMETER JUSTIFICATION</a>
+  <a href="dashboard_3_attacks.html" class="">03 · ATTACK SCENARIOS</a>
+ </nav>
+</header><main>
+
+<div class="card"><div class="eyebrow">Layer 1 · Cited values</div>
+ <h2>Four values are canonical — the rest are defended by sweep</h2>
+ <p class="claim">These come straight from the literature; the tier structure
+ only <i>reuses</i> them. Everything below is either conventional (in common
+ published use) or calibrated (ours), and every calibrated value is put on a
+ sweep so the reader sees the trade instead of trusting a number.</p>
+ <div class="grid2">
+  <div class="canon"><h3>Prior weight W = 2, base rate a = 0.5</h3>
+   <div class="cite">Josang 2001</div><p>Non-informative Beta(1,1) prior, identical for every tier; starting trust 0.5 is an output of the prior, not a knob.</p></div>
+  <div class="canon"><h3>theta = 0.4 (good), tau = 0.6 (bad)</h3>
+   <div class="cite">Kang et al. 2019, Table I</div><p>The paper's own interaction weights; theta+tau=1 held. Tier no longer changes evidence magnitude — only influence.</p></div>
+  <div class="canon"><h3>d1 = 1.0 (hardware discount)</h3>
+   <div class="cite">Josang discounting operator</div><p>Forced: a fully-assured identity is not discounted. Only d2, d3 are free parameters.</p></div>
+  <div class="canon"><h3>PROBATION_T = 0.5</h3>
+   <div class="cite">Josang indifference + Kang 0.5 cut</div><p>Subjective-logic indifference point AND Kang's 100%-detection threshold coincide.</p></div></div>
+</div>
+
+<div class="card"><div class="eyebrow">Sweep 01 of 11</div>
+ <h2>TAU (bad-evidence weight) = 0.6<span class="chip canonical">CANONICAL</span></h2>
+ <div class="mech">Kang et al. 2019 (IEEE TVT, Table I) weight negative interactions at tau=0.6 vs good at theta=0.4. In v3 this single asymmetry — not a per-severity magnitude — carries how fast bad behaviour erodes trust; theta+tau=1 is held.</div>
+ <div class="figure"><canvas id="sw0"></canvas></div>
+ <div class="verdict" id="v0"><b>MEASURED</b> Kang's tau=0.6 is adopted directly. The sweep measures its cost on the honest side: at 5% MINOR noise over 200 rounds the residual sanction rate runs {0.5: 0.025, 0.6: 0.275, 0.7: 0.65} — tau is the dominant lever (tau=0.5 -> 2%, tau=0.7 -> 65%). One bad event drops a fresh device to 0.3846 and a pure-MINOR attacker is sanctioned in 4 rounds. We keep the cited value and flag the honest residual rather than tune tau to hit a target.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 02 of 11</div>
+ <h2>u-gate (cold-start) = on<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Subjective-logic uncertainty u=W/(W+s+f) (Josang 2001). Score-path sanctions are withheld while u>=0.5 (s+f<=W): the opinion is still prior-dominated. No new constant — the gate reuses W.</div>
+ <div class="figure"><canvas id="sw1"></canvas></div>
+ <div class="verdict" id="v1"><b>MEASURED</b> The gate is a pure cold-start defense and the sweep shows exactly that. Over the first 20 rounds honest false positives fall 15%->2% when the gate is switched on; a single early noise MINOR (trust 0.3846) is absorbed because the opinion is still prior-dominated (u>=0.5). The gate does not touch the steady-state residual (32%->28% at 200 rounds) — that is tau's cluster effect, reported honestly on dashboard 3's negative control.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 03 of 11</div>
+ <h2>PROBATION_T = 0.5<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Trust threshold at which a device is sanctioned. 0.5 is the subjective-logic indifference point (below it a device is less trustworthy than a fresh unknown, base rate 0.5) and coincides with Kang's 0.5 detection cut (100% detection).</div>
+ <div class="figure"><canvas id="sw2"></canvas></div>
+ <div class="verdict" id="v2"><b>MEASURED</b> The threshold shifts how much sustained minor abuse is tolerated ({0.4: 4, 0.45: 4, 0.5: 4, 0.55: 4, 0.6: 4} rounds to sanction a pure-MINOR attacker) while honest false positives move only slightly across the band ({0.4: 0.0, 0.45: 0.1, 0.5: 0.275, 0.55: 0.475, 0.6: 0.75}). 0.5 is kept for its meaning, not its score: crossing it makes a device literally less trustworthy than a fresh unknown, and it is exactly Kang's detection threshold.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 04 of 11</div>
+ <h2>d2 (Tier-2 discount) = 0.5<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Josang discounting: influence = D[tier]*trust. d2 prices a TPM-resident identity between hardware-bound (1.0) and software (0.1). RepuNet gives the discount structure; the value is ours.</div>
+ <div class="figure"><canvas id="sw3"></canvas></div>
+ <div class="verdict" id="v3"><b>MEASURED</b> At d2=0.5 it takes 2 fully-trusted compromised TPM identities to outweigh one honest hardware veteran (weight 0.8331), while an honest TPM veteran still carries 0.4167 weight. Dropping to 0.25 doubles the sybil cost but halves honest TPM utility (0.2083); 0.75 nearly reaches hardware parity (2 identities). 0.5 splits the interval in log-space — the midpoint the sweep supports.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 05 of 11</div>
+ <h2>d3 (Tier-3 cap) = 0.1<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Cheap-pseudonym economics (Friedman & Resnick 2001): software-only influence must cost identity. d3 also doubles as the probation weight cap (a suspect is treated as an unproven identity).</div>
+ <div class="figure"><canvas id="sw4"></canvas></div>
+ <div class="verdict" id="v4"><b>MEASURED</b> At cap 0.1, outvoting one honest hardware veteran needs 17 fresh software sybils — each a disposable identity the CRITICAL rule bans on confirmation — while an honest long-lived software client keeps 0.0833 weight. At cap 0.5 the same attack needs only 4 sybils. The value buys an order-of-magnitude sybil cost for a modest honest-utility price.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 06 of 11</div>
+ <h2>GAMMA = 0.9<span class="chip conventional">CONVENTIONAL</span></h2>
+ <div class="mech">Recency decay on evidence (Josang & Ismail 2002 give the mechanism; 0.9 is a value in common published use, e.g. DIB-RM). Sets the memory horizon 1/(1-gamma) and the goodwill ceiling.</div>
+ <div class="figure"><canvas id="sw5"></canvas></div>
+ <div class="verdict" id="v5"><b>MEASURED</b> gamma sets both the goodwill ceiling s_max=theta/(1-gamma) and the memory horizon 1/(1-gamma). At 0.9 the ceiling is 0.8333 (trust cannot exceed 0.8333) on a 10.0-round horizon; 0.99 blows both up (ceiling 0.9762, horizon 100.0). Adopted as the conventional value on a visible plateau — never attributed to Josang as a recommendation.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 07 of 11</div>
+ <h2>FORGIVE_AFTER = 5<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Penalty stickiness against on-off cycling (Sun 2008; Labraoui 2015). The papers define the defense, not the window length; 5 = probation W_MIN + 1 so informal fade never undercuts the formal trial.</div>
+ <div class="figure"><canvas id="sw6"></canvas></div>
+ <div class="verdict" id="v6"><b>MEASURED</b> An on-off attacker resting 4 rounds per cycle launders part of its penalty for n<=4 and nothing from n=5 up ({1: 0.1855, 2: 0.1426, 3: 0.0975, 4: 0.05, 5: 0.0, 6: 0.0, 7: 0.0, 8: 0.0}). n=5=W_MIN+1: the informal forgetting path can never resolve faster than the formal probation trial. Honest single-slip recovery stays bounded (63 clean rounds to fade a MINOR by 95% at n=5).</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 08 of 11</div>
+ <h2>MAJOR_RUN_TO_ESCALATE = 2<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Graduated sanctions escalate on REPEATED violation (Ostrom 1990). This ungated run counter carries MAJOR's severity distinctly from the score path.</div>
+ <div class="figure"><canvas id="sw7"></canvas></div>
+ <div class="verdict" id="v7"><b>MEASURED</b> m=1 collapses the ladder: one isolated MAJOR escalates an honest veteran (survives: {1: False, 2: True, 3: True, 4: True}). m=2 is the smallest run separating incident from pattern — Ostrom's 'repeated violation' minimum — containing every sustained attack in 2 rounds. Larger m only widens the attacker's window ([1, 2, 3, 4]).</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 09 of 11</div>
+ <h2>REINSTATE_T = 0.75<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Reinstatement floor above the sanction threshold. Closed form 0.5*(1+1/W)=0.75: the smallest floor that survives one unit of noise after return, given W=2.</div>
+ <div class="figure"><canvas id="sw8"></canvas></div>
+ <div class="verdict" id="v8"><b>MEASURED</b> 0.75=0.5*(1+1/W) is the smallest floor that survives one noise MINOR on the day of return (post-noise trust {0.55: 0.4737, 0.65: 0.5743, 0.75: 0.6833, 0.85: 0.8017}). Flapping floors: [0.55]. Because W=2 the required re-entry evidence ([1.69, 3.09, 5.6, 11.47]) already exceeds the maximum trial credit theta*W_MAX=3.6, so the floor — not the trial — sets the return point; every reinstatement lands at exactly 0.75 (a coupling to W, flagged on dashboard 1).</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 10 of 11</div>
+ <h2>BAN_T = 0.3<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Score backstop below PROBATION_T. RepuNet gives the exclusion-threshold structure (its own value is 0.6); 0.3 is ours. Under D5 an active rehab-eligible device is never banned directly by the score — probation always comes first.</div>
+ <div class="figure"><canvas id="sw9"></canvas></div>
+ <div class="verdict" id="v9"><b>MEASURED</b> Across 400 random Tier-1 histories per value, the backstop never fires before probation for any BAN_T in the swept range ({0.1: 0.0, 0.2: 0.0, 0.3: 0.0, 0.4: 0.0, 0.45: 0.0}) — D5 routing guarantees an active rehab-eligible device is probated first. 0.3 sits safely below PROBATION_T with margin; the value is a plateau, not a tuned edge.</div>
+</div>
+<div class="card"><div class="eyebrow">Sweep 11 of 11</div>
+ <h2>FORGET (uniform) = 0.95<span class="chip calibrated">CALIBRATED</span></h2>
+ <div class="mech">Earned forgetting: penalties fade only after a clean streak, and slower than goodwill decays (Slovic 1993 direction only). v3 applies one uniform rate to every tier (v2.1's T1-only fade retired). 0.95 = 1-(1-gamma)/2.</div>
+ <div class="figure"><canvas id="sw10"></canvas></div>
+ <div class="verdict" id="v10"><b>MEASURED</b> FORGET=1.0 scars a client forever (offense never fades; trust plateaus at 0.7512); FORGET=0.90=gamma erases it as fast as goodwill decays. 0.95=1-(1-gamma)/2 makes distrust fade at half the rate trust decays (400 rounds) — Slovic's asymmetry as a direction, magnitude shown to be a plateau. v3 applies this uniformly, which is what lets a T2/T3 client heal at all (v2.1 never forgave them).</div>
+</div>
+</main><footer>Generated by gen_data.py from trust/reputation.py (v3) —
+every figure is simulation output, not an illustration. Provenance grades:
+CANONICAL = a paper's own number · CONVENTIONAL = a number in common published
+use · CALIBRATED = ours, defended by the sweeps on dashboard 02. Amber panels
+flag measured deviations from the design's expected numbers.</footer><script>
+Chart.defaults.font.family='"IBM Plex Mono",monospace';
+Chart.defaults.font.size=11; Chart.defaults.color='#5F6E75';
+const C={t1:'#0E7A63',t2:'#C08A2D',t3:'#5B6FA8',bad:'#BE3E37',aux:'#2E6F8E',ink:'#1B262C'};
+function thr(v,n,color,label){return{label:label,data:Array(n).fill(v),borderColor:color||'#9AA7A3',
+  borderDash:[5,4],borderWidth:1.2,pointRadius:0,fill:false,order:99};}
+function line(id,labels,ds,o){o=o||{};return new Chart(document.getElementById(id),{type:'line',
+ data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,
+  animation:false,interaction:{mode:'index',intersect:false},
+  plugins:{legend:{labels:{boxWidth:14,boxHeight:2,filter:i=>!i.text.startsWith('_')}}},
+  scales:Object.assign({x:{title:{display:!!o.x,text:o.x||''},grid:{display:false}},
+   y:{title:{display:!!o.y,text:o.y||''},min:o.min,max:o.max,grid:{color:'#E7ECEA'}}},
+   o.y1?{y1:{position:'right',title:{display:true,text:o.y1},grid:{drawOnChartArea:false},min:o.y1min,max:o.y1max}}:{})}});}
+function bars(id,labels,ds,o){o=o||{};return new Chart(document.getElementById(id),{type:'bar',
+ data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,
+  plugins:{legend:{display:ds.length>1,labels:{boxWidth:14}}},
+  scales:{x:{grid:{display:false}},y:{min:o.min,max:o.max,grid:{color:'#E7ECEA'},
+   title:{display:!!o.y,text:o.y||''}}}}});}
+function strip(el,statuses){const host=(typeof el==='string')?document.getElementById(el):el;
+ const s=document.createElement('div');s.className='strip';
+ statuses.forEach(st=>{const d=document.createElement('div');
+  d.className=st[0];d.title=st;s.appendChild(d);});host.appendChild(s);
+ const l=document.createElement('div');l.className='striplegend';
+ l.innerHTML='STATUS PER ROUND<i style="background:var(--st-active)"></i>ACTIVE'+
+  '<i style="background:var(--st-prob)"></i>PROBATION<i style="background:var(--st-ban)"></i>BANNED';
+ host.appendChild(l);}
+function ln(d,color,label,extra){return Object.assign({label:label,data:d,borderColor:color,
+ backgroundColor:color,borderWidth:2,pointRadius:0,tension:.12,fill:false},extra||{});}
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;
+ if(html!=null)e.innerHTML=html;return e;}
+
+const D={"params": [{"name": "TAU (bad-evidence weight)", "chosen": 0.6, "grade": "CANONICAL", "mechanism": "Kang et al. 2019 (IEEE TVT, Table I) weight negative interactions at tau=0.6 vs good at theta=0.4. In v3 this single asymmetry \u2014 not a per-severity magnitude \u2014 carries how fast bad behaviour erodes trust; theta+tau=1 is held.", "values": [0.5, 0.6, 0.7], "series": {"honest_fp_rate_200rounds": [0.025, 0.275, 0.65], "first_bad_trust": [0.4, 0.3846, 0.3704], "all_minor_attacker_latency": [5, 4, 3]}, "verdict": "Kang's tau=0.6 is adopted directly. The sweep measures its cost on the honest side: at 5% MINOR noise over 200 rounds the residual sanction rate runs {0.5: 0.025, 0.6: 0.275, 0.7: 0.65} \u2014 tau is the dominant lever (tau=0.5 -> 2%, tau=0.7 -> 65%). One bad event drops a fresh device to 0.3846 and a pure-MINOR attacker is sanctioned in 4 rounds. We keep the cited value and flag the honest residual rather than tune tau to hit a target."}, {"name": "u-gate (cold-start)", "chosen": "on", "grade": "CALIBRATED", "mechanism": "Subjective-logic uncertainty u=W/(W+s+f) (Josang 2001). Score-path sanctions are withheld while u>=0.5 (s+f<=W): the opinion is still prior-dominated. No new constant \u2014 the gate reuses W.", "values": ["off", "on"], "series": {"fp_first20_rounds": [0.15, 0.025], "fp_full_200_rounds": [0.325, 0.275]}, "verdict": "The gate is a pure cold-start defense and the sweep shows exactly that. Over the first 20 rounds honest false positives fall 15%->2% when the gate is switched on; a single early noise MINOR (trust 0.3846) is absorbed because the opinion is still prior-dominated (u>=0.5). The gate does not touch the steady-state residual (32%->28% at 200 rounds) \u2014 that is tau's cluster effect, reported honestly on dashboard 3's negative control."}, {"name": "PROBATION_T", "chosen": 0.5, "grade": "CALIBRATED", "mechanism": "Trust threshold at which a device is sanctioned. 0.5 is the subjective-logic indifference point (below it a device is less trustworthy than a fresh unknown, base rate 0.5) and coincides with Kang's 0.5 detection cut (100% detection).", "values": [0.4, 0.45, 0.5, 0.55, 0.6], "series": {"honest_fp_rate": [0.0, 0.1, 0.275, 0.475, 0.75], "all_minor_latency": [4, 4, 4, 4, 4]}, "verdict": "The threshold shifts how much sustained minor abuse is tolerated ({0.4: 4, 0.45: 4, 0.5: 4, 0.55: 4, 0.6: 4} rounds to sanction a pure-MINOR attacker) while honest false positives move only slightly across the band ({0.4: 0.0, 0.45: 0.1, 0.5: 0.275, 0.55: 0.475, 0.6: 0.75}). 0.5 is kept for its meaning, not its score: crossing it makes a device literally less trustworthy than a fresh unknown, and it is exactly Kang's detection threshold."}, {"name": "d2 (Tier-2 discount)", "chosen": 0.5, "grade": "CALIBRATED", "mechanism": "Josang discounting: influence = D[tier]*trust. d2 prices a TPM-resident identity between hardware-bound (1.0) and software (0.1). RepuNet gives the discount structure; the value is ours.", "values": [0.25, 0.4, 0.5, 0.6, 0.75], "series": {"compromised_t2_to_outweigh_one_t1_veteran": [4, 3, 2, 2, 2], "honest_t2_veteran_weight": [0.2083, 0.3333, 0.4167, 0.5, 0.625]}, "verdict": "At d2=0.5 it takes 2 fully-trusted compromised TPM identities to outweigh one honest hardware veteran (weight 0.8331), while an honest TPM veteran still carries 0.4167 weight. Dropping to 0.25 doubles the sybil cost but halves honest TPM utility (0.2083); 0.75 nearly reaches hardware parity (2 identities). 0.5 splits the interval in log-space \u2014 the midpoint the sweep supports."}, {"name": "d3 (Tier-3 cap)", "chosen": 0.1, "grade": "CALIBRATED", "mechanism": "Cheap-pseudonym economics (Friedman & Resnick 2001): software-only influence must cost identity. d3 also doubles as the probation weight cap (a suspect is treated as an unproven identity).", "values": [0.05, 0.1, 0.2, 0.3, 0.5], "series": {"fresh_sybils_to_outweigh_one_veteran": [34, 17, 9, 6, 4], "veteran_t3_weight_ceiling": [0.0417, 0.0833, 0.1667, 0.25, 0.4167]}, "verdict": "At cap 0.1, outvoting one honest hardware veteran needs 17 fresh software sybils \u2014 each a disposable identity the CRITICAL rule bans on confirmation \u2014 while an honest long-lived software client keeps 0.0833 weight. At cap 0.5 the same attack needs only 4 sybils. The value buys an order-of-magnitude sybil cost for a modest honest-utility price."}, {"name": "GAMMA", "chosen": 0.9, "grade": "CONVENTIONAL", "mechanism": "Recency decay on evidence (Josang & Ismail 2002 give the mechanism; 0.9 is a value in common published use, e.g. DIB-RM). Sets the memory horizon 1/(1-gamma) and the goodwill ceiling.", "values": [0.75, 0.8, 0.85, 0.9, 0.95, 0.99], "series": {"veteran_trust_ceiling": [0.7222, 0.75, 0.7857, 0.8333, 0.9, 0.9762], "memory_horizon": [4.0, 5.0, 6.7, 10.0, 20.0, 100.0]}, "verdict": "gamma sets both the goodwill ceiling s_max=theta/(1-gamma) and the memory horizon 1/(1-gamma). At 0.9 the ceiling is 0.8333 (trust cannot exceed 0.8333) on a 10.0-round horizon; 0.99 blows both up (ceiling 0.9762, horizon 100.0). Adopted as the conventional value on a visible plateau \u2014 never attributed to Josang as a recommendation."}, {"name": "FORGIVE_AFTER", "chosen": 5, "grade": "CALIBRATED", "mechanism": "Penalty stickiness against on-off cycling (Sun 2008; Labraoui 2015). The papers define the defense, not the window length; 5 = probation W_MIN + 1 so informal fade never undercuts the formal trial.", "values": [1, 2, 3, 4, 5, 6, 7, 8], "series": {"penalty_laundered_fraction": [0.1855, 0.1426, 0.0975, 0.05, 0.0, 0.0, 0.0, 0.0], "clean_rounds_to_fade_one_minor_95pct": [59, 60, 61, 62, 63, 64, 65, 66]}, "verdict": "An on-off attacker resting 4 rounds per cycle launders part of its penalty for n<=4 and nothing from n=5 up ({1: 0.1855, 2: 0.1426, 3: 0.0975, 4: 0.05, 5: 0.0, 6: 0.0, 7: 0.0, 8: 0.0}). n=5=W_MIN+1: the informal forgetting path can never resolve faster than the formal probation trial. Honest single-slip recovery stays bounded (63 clean rounds to fade a MINOR by 95% at n=5)."}, {"name": "MAJOR_RUN_TO_ESCALATE", "chosen": 2, "grade": "CALIBRATED", "mechanism": "Graduated sanctions escalate on REPEATED violation (Ostrom 1990). This ungated run counter carries MAJOR's severity distinctly from the score path.", "values": [1, 2, 3, 4], "series": {"sustained_containment_rounds": [1, 2, 3, 4], "isolated_major_survives": [false, true, true, true]}, "verdict": "m=1 collapses the ladder: one isolated MAJOR escalates an honest veteran (survives: {1: False, 2: True, 3: True, 4: True}). m=2 is the smallest run separating incident from pattern \u2014 Ostrom's 'repeated violation' minimum \u2014 containing every sustained attack in 2 rounds. Larger m only widens the attacker's window ([1, 2, 3, 4])."}, {"name": "REINSTATE_T", "chosen": 0.75, "grade": "CALIBRATED", "mechanism": "Reinstatement floor above the sanction threshold. Closed form 0.5*(1+1/W)=0.75: the smallest floor that survives one unit of noise after return, given W=2.", "values": [0.55, 0.65, 0.75, 0.85], "series": {"trust_after_one_noise_minor": [0.4737, 0.5743, 0.6833, 0.8017], "evidence_needed_to_reach_floor": [1.69, 3.09, 5.6, 11.47]}, "verdict": "0.75=0.5*(1+1/W) is the smallest floor that survives one noise MINOR on the day of return (post-noise trust {0.55: 0.4737, 0.65: 0.5743, 0.75: 0.6833, 0.85: 0.8017}). Flapping floors: [0.55]. Because W=2 the required re-entry evidence ([1.69, 3.09, 5.6, 11.47]) already exceeds the maximum trial credit theta*W_MAX=3.6, so the floor \u2014 not the trial \u2014 sets the return point; every reinstatement lands at exactly 0.75 (a coupling to W, flagged on dashboard 1)."}, {"name": "BAN_T", "chosen": 0.3, "grade": "CALIBRATED", "mechanism": "Score backstop below PROBATION_T. RepuNet gives the exclusion-threshold structure (its own value is 0.6); 0.3 is ours. Under D5 an active rehab-eligible device is never banned directly by the score \u2014 probation always comes first.", "values": [0.1, 0.2, 0.3, 0.4, 0.45], "series": {"probation_preempted_fraction": [0.0, 0.0, 0.0, 0.0, 0.0]}, "verdict": "Across 400 random Tier-1 histories per value, the backstop never fires before probation for any BAN_T in the swept range ({0.1: 0.0, 0.2: 0.0, 0.3: 0.0, 0.4: 0.0, 0.45: 0.0}) \u2014 D5 routing guarantees an active rehab-eligible device is probated first. 0.3 sits safely below PROBATION_T with margin; the value is a plateau, not a tuned edge."}, {"name": "FORGET (uniform)", "chosen": 0.95, "grade": "CALIBRATED", "mechanism": "Earned forgetting: penalties fade only after a clean streak, and slower than goodwill decays (Slovic 1993 direction only). v3 applies one uniform rate to every tier (v2.1's T1-only fade retired). 0.95 = 1-(1-gamma)/2.", "values": [0.9, 0.925, 0.95, 0.975, 1.0], "series": {"rounds_to_fade_one_offense": [400, 400, 400, 400, 400], "honest_t2_trust_after_30_clean": [0.823, 0.8174, 0.8066, 0.7866, 0.7512]}, "verdict": "FORGET=1.0 scars a client forever (offense never fades; trust plateaus at 0.7512); FORGET=0.90=gamma erases it as fast as goodwill decays. 0.95=1-(1-gamma)/2 makes distrust fade at half the rate trust decays (400 rounds) \u2014 Slovic's asymmetry as a direction, magnitude shown to be a plateau. v3 applies this uniformly, which is what lets a T2/T3 client heal at all (v2.1 never forgave them)."}], "canonical": [{"name": "Prior weight W = 2, base rate a = 0.5", "cite": "Josang 2001", "note": "Non-informative Beta(1,1) prior, identical for every tier; starting trust 0.5 is an output of the prior, not a knob."}, {"name": "theta = 0.4 (good), tau = 0.6 (bad)", "cite": "Kang et al. 2019, Table I", "note": "The paper's own interaction weights; theta+tau=1 held. Tier no longer changes evidence magnitude \u2014 only influence."}, {"name": "d1 = 1.0 (hardware discount)", "cite": "Josang discounting operator", "note": "Forced: a fully-assured identity is not discounted. Only d2, d3 are free parameters."}, {"name": "PROBATION_T = 0.5", "cite": "Josang indifference + Kang 0.5 cut", "note": "Subjective-logic indifference point AND Kang's 100%-detection threshold coincide."}]};
+
+const P=D.params;
+function firstNum(o){for(const k in o){if(typeof o[k][0]==='number')return {k,v:o[k]};}}
+function secondNum(o){let seen=0;for(const k in o){if(typeof o[k][0]==='number'){if(seen++)return {k,v:o[k]};}}}
+P.forEach((s,i)=>{
+  const labels=s.values.map(String);
+  const a=firstNum(s.series), b=secondNum(s.series);
+  const ds=[{label:a.k,data:a.v,backgroundColor:C.t1,borderRadius:3,yAxisID:'y'}];
+  const o={x:s.name,y:a.k.replace(/_/g,' ')};
+  if(b){ds.push({label:b.k,data:b.v,backgroundColor:C.t2,borderRadius:3,yAxisID:'y1'});
+    o.y1=b.k.replace(/_/g,' ');}
+  const chosenIdx=s.values.findIndex(v=>String(v)===String(s.chosen));
+  new Chart(document.getElementById('sw'+i),{type:'bar',
+    data:{labels:labels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+     plugins:{legend:{labels:{boxWidth:14}},
+      tooltip:{callbacks:{title:it=>s.name+' = '+it[0].label+(it[0].dataIndex===chosenIdx?'  ◀ shipped':'')}}},
+     scales:{x:{grid:{display:false},ticks:{callback:(v,idx)=>labels[idx]+(idx===chosenIdx?' ◀':'')}},
+      y:{position:'left',grid:{color:'#E7ECEA'},title:{display:true,text:o.y}},
+      y1:o.y1?{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:o.y1}}:{display:false}}}});
+});
+
+</script></body></html>

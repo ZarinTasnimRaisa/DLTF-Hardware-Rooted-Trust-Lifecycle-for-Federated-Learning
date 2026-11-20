@@ -1,0 +1,60 @@
+{
+  "_comment": [
+    "Four-validator QBFT genesis for DLTFRegistry.sol.",
+    "",
+    "cancunTime is 0 because the contract targets Cancun. If this is omitted",
+    "the deployment either fails or silently runs under an older EVM, and the",
+    "gas figures stop matching Table 4 -- which would look like a measurement",
+    "problem and is actually a configuration one.",
+    "",
+    "The fee market is deliberately LIVE (no zeroBaseFee). A free-gas chain is",
+    "easier to run and would exercise a DIFFERENT code path from Amoy or",
+    "Sepolia: chain/signer.py's EIP-1559 fields, and the effectiveGasPrice",
+    "that eval/exp_economics.py reads, only mean anything where gas is priced.",
+    "Matching production here costs nothing but a large genesis allocation.",
+    "",
+    "blockperiodseconds 2 gives a fast chain. Set it to 5 when measuring",
+    "confirmation latency, so the distribution is not dominated by a block",
+    "time nobody would deploy."
+  ],
+  "genesis": {
+    "config": {
+      "chainId": 1337,
+      "homesteadBlock": 0,
+      "eip150Block": 0,
+      "eip155Block": 0,
+      "eip158Block": 0,
+      "byzantiumBlock": 0,
+      "constantinopleBlock": 0,
+      "petersburgBlock": 0,
+      "istanbulBlock": 0,
+      "berlinBlock": 0,
+      "londonBlock": 0,
+      "shanghaiTime": 0,
+      "cancunTime": 0,
+      "qbft": {
+        "blockperiodseconds": 2,
+        "epochlength": 30000,
+        "requesttimeoutseconds": 4
+      }
+    },
+    "nonce": "0x0",
+    "timestamp": "0x0",
+    "gasLimit": "0x1fffffffffffff",
+    "difficulty": "0x1",
+    "mixHash": "0x63746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365",
+    "coinbase": "0x0000000000000000000000000000000000000000",
+    "alloc": {
+      "_comment_alloc": "Replace both addresses below. The first is the DEPLOYER, which becomes the contract's immutable authorised writer. The second is a NON-writer, needed for experiment 2c: submitting a legal-looking write from an unauthorised account and showing four independent nodes refuse it. Without a second funded key that experiment cannot be run.",
+      "0000000000000000000000000000000000000000": {
+        "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  },
+  "blockchain": {
+    "nodes": {
+      "generate": true,
+      "count": 4
+    }
+  }
+}

@@ -1,0 +1,27 @@
+# DLTF -- optional on-chain trust registry
+#
+#   pip install -r requirements-chain.txt
+#
+# Only needed for --chain mock|node. With --chain off (the default) nothing
+# here is imported and the system behaves exactly as it did before the chain
+# layer existed.
+#
+# WHY THE PRE-RELEASE PINS BELOW ARE EXPLICIT: eth-tester and py-evm have
+# never published a final release -- their newest versions are 0.13.0b1 and
+# 0.12.1b1. pip skips pre-releases unless the specifier itself mentions one,
+# so a plain `eth-tester>=0.12` resolves to NOTHING and fails with a wall of
+# "Ignored the following versions". Naming the beta explicitly is the fix.
+
+# ---- Ethereum tooling ---------------------------------------------------
+web3>=7.0,<8                    # JSON-RPC client for chain/evm.py
+eth-utils>=5.0                  # keccak256, ABI error selectors
+eth-account>=0.13               # EIP-712 signing for the commitment layer
+eth-abi>=5.0.0b1
+eth-typing>=5.0
+eth-hash[pycryptodome]>=0.7
+
+# ---- in-process EVM: every contract test runs with NO node --------------
+# This is what makes chain/evm.py, the three parity suites, and
+# eval/chain_eval.py runnable anywhere. Real EVM bytecode, no daemon.
+eth-tester>=0.13.0b1
+py-evm>=0.12.1b1

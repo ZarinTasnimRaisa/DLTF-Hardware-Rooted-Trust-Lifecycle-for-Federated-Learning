@@ -1,0 +1,90 @@
+# Four Besu validators running QBFT. RPC is exposed from node1 only.
+#
+# UNTESTED IN THIS FORM -- verify with ./verify.sh before drawing conclusions.
+#
+# WHY FOUR: f = 1. Byzantine agreement needs 3f+1 nodes to tolerate f faults,
+# so four is the smallest network where "Byzantine fault tolerant" means
+# anything. Three validators would give you consensus with no tolerance, and
+# the liveness experiment would have nothing to demonstrate.
+#
+# WHY RPC FROM ONE NODE: the federation must keep talking to the SAME endpoint
+# while validators are stopped. Point it at node1 and stop node3 and node4, so
+# the endpoint stays reachable while the network loses quorum. That is the
+# realistic outage: the chain answers, accepts transactions, and never mines
+# them. Load-balancing across all four would instead produce connection
+# errors, which is a different and much easier failure to survive.
+
+x-besu: &besu
+  image: hyperledger/besu:24.12.2
+  restart: unless-stopped
+  environment:
+    BESU_OPTS: "-Xmx1g"
+  command: &besu-cmd >
+    --genesis-file=/config/genesis.json
+    --data-path=/data
+    --node-private-key-file=/data/key
+    --min-gas-price=1000000000
+    --p2p-port=30303
+    --host-allowlist=*
+    --sync-mode=FULL
+    --logging=INFO
+
+services:
+  node1:
+    <<: *besu
+    container_name: dltf-besu-1
+    ports:
+      - "8545:8545"          # the ONLY endpoint the federation talks to
+      - "8546:8546"
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./node1/data:/data
+    command: >
+      --genesis-file=/config/genesis.json
+      --data-path=/data
+      --node-private-key-file=/data/key
+      --min-gas-price=1000000000
+      --p2p-port=30303
+      --host-allowlist=*
+      --sync-mode=FULL
+      --rpc-http-enabled
+      --rpc-http-host=0.0.0.0
+      --rpc-http-port=8545
+      --rpc-http-cors-origins=*
+      --rpc-http-api=ETH,NET,WEB3,QBFT,ADMIN,TXPOOL,DEBUG
+      --rpc-ws-enabled
+      --rpc-ws-host=0.0.0.0
+      --rpc-ws-port=8546
+      --logging=INFO
+
+  node2: &follower
+    <<: *besu
+    container_name: dltf-besu-2
+    depends_on: [node1]
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./node2/data:/data
+    command: >
+      --genesis-file=/config/genesis.json
+      --data-path=/data
+      --node-private-key-file=/data/key
+      --min-gas-price=1000000000
+      --p2p-port=30303
+      --host-allowlist=*
+      --sync-mode=FULL
+      --bootnodes=${DLTF_BOOTNODE}
+      --logging=INFO
+
+  node3:
+    <<: *follower
+    container_name: dltf-besu-3
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./node3/data:/data
+
+  node4:
+    <<: *follower
+    container_name: dltf-besu-4
+    volumes:
+      - ./genesis.json:/config/genesis.json:ro
+      - ./node4/data:/data

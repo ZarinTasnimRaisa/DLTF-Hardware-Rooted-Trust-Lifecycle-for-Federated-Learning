@@ -1,0 +1,16 @@
+{
+  "localhost": {
+    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "block": 59,
+    "chain_id": 1337,
+    "deploy_block": 59,
+    "deployed_at": "2026-09-10T19:20:26Z",
+    "effective_gas_price": 1000000000,
+    "gas_used": 2085425,
+    "require_commit": false,
+    "rpc_url": "http://127.0.0.1:8545",
+    "server": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "signed_locally": true,
+    "tx": "b01801626afdbfea35c5c6012bb0236b88d29a8f6631a5bc9d110ced8dc60a69"
+  }
+}

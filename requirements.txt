@@ -1,0 +1,29 @@
+# DLTF -- core requirements
+#
+#   python3 -m venv venv
+#   source venv/bin/activate
+#   pip install -r requirements.txt
+#
+# NOTE: create the venv WITHOUT --system-site-packages. A venv that inherits
+# system packages is what caused the NumPy 1.x / 2.x ABI clash: the system
+# matplotlib in /usr/lib/python3/dist-packages was compiled against NumPy 1.x
+# while NumPy 2.x resolved from ~/.local, so matplotlib failed to import and
+# every figure was skipped. Keeping the venv isolated avoids that entirely.
+
+# ---- numerics -----------------------------------------------------------
+# numpy 2.x is fine, but matplotlib MUST come from the same environment so
+# their compiled ABIs agree. Pin both here rather than relying on the system.
+numpy>=2.0,<3
+matplotlib>=3.8,<4
+
+# ---- TPM identity: EK certificate chain verification --------------------
+cryptography>=42.0
+
+# ---- torch: REAL mode only (MNIST). Omit for SIM-only work. -------------
+# Install separately if you want the CPU wheel:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+torch>=2.0
+torchvision>=0.15
+
+# ---- optional: pytest (the suites also run as plain scripts) ------------
+pytest>=8.0

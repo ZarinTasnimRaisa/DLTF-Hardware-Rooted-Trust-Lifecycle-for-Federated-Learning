@@ -1,0 +1,301 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>01 · Reputation mechanism</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#EFF2F1; --panel:#FFFFFF; --ink:#1B262C; --muted:#5F6E75;
+  --line:#D7DEDC; --t1:#0E7A63; --t2:#C08A2D; --t3:#5B6FA8;
+  --bad:#BE3E37; --aux:#2E6F8E;
+  --st-active:#CBE5D6; --st-prob:#F3DCA8; --st-ban:#F0B9B1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif;padding:0 20px 80px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+header{max-width:1020px;margin:0 auto;padding:44px 0 10px;
+  border-bottom:2px solid var(--ink)}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;
+  color:var(--muted);text-transform:uppercase}
+h1{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:30px;
+  letter-spacing:-.01em;margin:6px 0 8px}
+.sub{color:var(--muted);max-width:78ch}
+nav{margin:14px 0 4px;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+nav a{color:var(--aux);text-decoration:none;margin-right:18px}
+nav a.here{color:var(--ink);border-bottom:2px solid var(--ink)}
+main{max-width:1020px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:22px 24px 20px;margin-top:26px;box-shadow:0 1px 0 rgba(27,38,44,.05)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.card h2{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;
+  margin:4px 0 6px}
+.claim{color:var(--muted);margin-bottom:14px;max-width:80ch}
+.figure{position:relative;height:260px}
+.figure.tall{height:300px}.figure.short{height:200px}
+.verdict{margin-top:14px;border-left:3px solid var(--t1);background:#F4F8F6;
+  padding:10px 14px;font-size:13.5px}
+.verdict b{font-family:"IBM Plex Mono",monospace;font-size:12px;
+  letter-spacing:.1em;color:var(--t1)}
+.verdict.warn{border-left-color:var(--t2);background:#FBF6EA}
+.verdict.warn b{color:#8A6318}
+.flag{margin-top:14px;border:1px solid var(--t2);border-left:4px solid var(--t2);
+  background:#FBF3E0;padding:11px 14px;font-size:13px;border-radius:4px}
+.flag b{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+  color:#8A6318;display:block;margin-bottom:3px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:860px){.grid3,.grid2{grid-template-columns:1fr}}
+.tiercard{border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.tiercard h3{font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-bottom:8px}
+.tiercard table{width:100%;border-collapse:collapse;font-size:13px}
+.tiercard td{padding:3px 0;border-bottom:1px dashed var(--line)}
+.tiercard td:last-child{text-align:right;font-family:"IBM Plex Mono",monospace}
+.chip{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.08em;padding:2px 9px;border-radius:20px;border:1px solid;
+  vertical-align:2px;margin-left:8px}
+.chip.canonical{color:var(--t1);border-color:var(--t1);background:#EAF4F0}
+.chip.conventional{color:var(--aux);border-color:var(--aux);background:#EBF2F6}
+.chip.calibrated{color:#8A6318;border-color:var(--t2);background:#FBF3E0}
+.mech{font-size:13px;color:var(--muted);margin:2px 0 12px;max-width:82ch}
+.strip{display:flex;height:16px;border:1px solid var(--line);border-radius:3px;
+  overflow:hidden;margin-top:8px}
+.strip div{flex:1}
+.strip .A{background:var(--st-active)}.strip .P{background:var(--st-prob)}
+.strip .B{background:var(--st-ban)}
+.striplegend{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--muted);margin-top:5px;letter-spacing:.06em}
+.striplegend i{display:inline-block;width:10px;height:10px;border-radius:2px;
+  vertical-align:-1px;margin:0 4px 0 12px}
+.numline{position:relative;height:86px;margin:26px 8px 4px}
+.numline .rail{position:absolute;top:44px;left:0;right:0;height:6px;
+  border-radius:3px;background:linear-gradient(90deg,var(--st-ban) 0 30%,
+  var(--st-prob) 30% 50%,#E4EDE8 50% 75%,var(--st-active) 75% 100%)}
+.numline .tick{position:absolute;top:32px;width:2px;height:30px;background:var(--ink)}
+.numline .lab{position:absolute;top:0;transform:translateX(-50%);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:center;line-height:1.3}
+.numline .end{position:absolute;top:58px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--muted)}
+.canon{border:1px solid var(--t1);border-radius:6px;padding:13px 15px;background:#F2F8F5}
+.canon h3{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--t1)}
+.canon .cite{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted)}
+.canon p{font-size:12.5px;margin-top:6px;color:var(--ink)}
+footer{max-width:1020px;margin:40px auto 0;color:var(--muted);font-size:12.5px;
+  border-top:1px solid var(--line);padding-top:12px}
+</style></head><body>
+<header>
+ <div class="kicker">Hardware-rooted trust for federated learning · evaluation bench · v3</div>
+ <h1>Reputation mechanism, end to end</h1>
+ <p class="sub">One device lifecycle: prior → evidence → gate → thresholds → status → influence → reinstatement. Every trace is a live run of the v3 engine; the strip under each trace is the device's actual status per round.</p>
+ <nav>
+  <a href="dashboard_1_reputation.html" class="here">01 · REPUTATION MECHANISM</a>
+  <a href="dashboard_2_parameters.html" class="">02 · PARAMETER JUSTIFICATION</a>
+  <a href="dashboard_3_attacks.html" class="">03 · ATTACK SCENARIOS</a>
+ </nav>
+</header><main>
+
+<div class="card"><div class="eyebrow">Part 01 · Enrollment</div>
+ <h2>One prior for every tier: Beta(1, 1)</h2>
+ <p class="claim">v3 gives every device the same non-informative prior
+ (W = 2, base rate a = 0.5), so every device starts at trust
+ 0.5 regardless of tier. Tier no longer lives in the prior — it lives
+ only in the influence discount D and in whether the device can be
+ rehabilitated. Starting trust is an output of the prior, not a knob.</p>
+ <div class="grid3">
+  <div class="tiercard"><h3>Tier 1 · hardware-bound</h3><table>
+   <tr><td>prior weight W</td><td>2</td></tr>
+   <tr><td>base rate a</td><td>0.5</td></tr>
+   <tr><td>prior (a₀, b₀)</td><td>(1, 1)</td></tr>
+   <tr><td>starting trust T₀ = a</td><td><b>0.5</b></td></tr>
+   <tr><td>influence discount D</td><td>1.0</td></tr>
+   <tr><td>rehabilitation</td><td>yes</td></tr>
+   <tr><td>forgetting FORGET</td><td>0.95</td></tr>
+  </table></div>
+  <div class="tiercard"><h3>Tier 2 · TPM-resident</h3><table>
+   <tr><td>prior weight W</td><td>2</td></tr>
+   <tr><td>base rate a</td><td>0.5</td></tr>
+   <tr><td>prior (a₀, b₀)</td><td>(1, 1)</td></tr>
+   <tr><td>starting trust T₀ = a</td><td><b>0.5</b></td></tr>
+   <tr><td>influence discount D</td><td>0.5</td></tr>
+   <tr><td>rehabilitation</td><td>no</td></tr>
+   <tr><td>forgetting FORGET</td><td>0.95</td></tr>
+  </table></div>
+  <div class="tiercard"><h3>Tier 3 · software-only</h3><table>
+   <tr><td>prior weight W</td><td>2</td></tr>
+   <tr><td>base rate a</td><td>0.5</td></tr>
+   <tr><td>prior (a₀, b₀)</td><td>(1, 1)</td></tr>
+   <tr><td>starting trust T₀ = a</td><td><b>0.5</b></td></tr>
+   <tr><td>influence discount D</td><td>0.1</td></tr>
+   <tr><td>rehabilitation</td><td>no</td></tr>
+   <tr><td>forgetting FORGET</td><td>0.95</td></tr>
+  </table></div></div>
+ <div class="verdict"><b>SELF-TEST ✓</b> &nbsp;All three tiers register at
+ trust 0.5 with uncertainty u = 1.0; the tier changes the discount and
+ rehab-eligibility, nothing about the score.</div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 02 · Strike rules P1–P3</div>
+ <h2>Same offense, tier-coupled consequence — from the discount, not the prior</h2>
+ <p class="claim">Fresh devices, identical Kang evidence weights
+ (θ = 0.4 good, τ = 0.6 bad). The trust trajectories are identical across
+ tiers; what differs is the <i>consequence</i> of crossing a threshold, set by
+ rehab-eligibility (Tier 1 probates and can recover; Tiers 2–3 ban).</p>
+ <div class="grid3">
+  <div><div class="figure short"><canvas id="p1"></canvas></div><div id="s1"></div>
+   <div class="verdict"><b>P1</b> Tier-1 escalated at its 2nd consecutive MAJOR (M3) → PROBATION.</div></div>
+  <div><div class="figure short"><canvas id="p2"></canvas></div><div id="s2"></div>
+   <div class="verdict"><b>P2</b> Tier-2 same score path, but the sanction is a ban.</div></div>
+  <div><div class="figure short"><canvas id="p3"></canvas></div><div id="s3"></div>
+   <div class="verdict"><b>P3</b> Tier-3 all-MINOR: banned once the u-gate opens.</div></div>
+ </div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 03 · Mechanism M1</div>
+ <h2>Bounded memory: goodwill saturates</h2>
+ <p class="claim">Positive evidence decays by γ = 0.9 each round, so banked
+ goodwill saturates at s_max = θ/(1−γ) = 4 and trust can never exceed
+ 0.8333 — the same ceiling for every tier. A veteran cannot buy an
+ unbounded attack budget.</p>
+ <div class="figure"><canvas id="m1"></canvas></div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 04 · Mechanism M2</div>
+ <h2>Earned forgetting: penalties fade only after a sustained clean streak</h2>
+ <p class="claim">One MAJOR at round 1, then clean rounds. The penalty f is
+ frozen until 5 consecutive clean rounds, then fades at FORGET = 0.95
+ per round — half the rate goodwill decays (Slovic direction; magnitude
+ calibrated). v3 applies this uniformly to every tier.</p>
+ <div class="figure"><canvas id="m2"></canvas></div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 05 · Mechanism M3 (ungated)</div>
+ <h2>Sleeper defense: consecutive MAJORs are counted, not scored</h2>
+ <p class="claim">40 clean rounds bank maximal goodwill, then the device turns.
+ The trust score alone is still 0.6558 at the second MAJOR — above the
+ 0.5 threshold — but the consecutive-MAJOR rule escalates anyway. M3 is
+ <i>ungated</i>: it fires even while the u-gate protects the score path.</p>
+ <div class="figure"><canvas id="m3"></canvas></div><div id="s5"></div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 06 · Mechanism (new in v3) · the u-gate</div>
+ <h2>Cold-start protection: no score sanction while the prior dominates</h2>
+ <p class="claim">The subjective-logic uncertainty is u = W/(W+s+f). While
+ u ≥ 0.5 (equivalently s+f ≤ W = 2) the opinion is still prior-dominated, so
+ score-path sanctions are withheld. Left: a single early noise MINOR is
+ absorbed (the gate stays shut until round 6). Right: a genuine all-MINOR
+ attacker pushes the gate open at round 4 and is sanctioned at round
+ 4. M3 and CRITICAL bypass the gate entirely.</p>
+ <div class="grid2">
+  <div><div class="figure short"><canvas id="gn"></canvas></div><div id="sgn"></div></div>
+  <div><div class="figure short"><canvas id="ga"></canvas></div><div id="sga"></div></div>
+ </div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 07 · Thresholds</div>
+ <h2>The trust line and its three cut-points</h2>
+ <p class="claim">All score transitions live on one axis. 0.5 is the
+ subjective-logic indifference point (and Kang's detection cut). 0.75 =
+ 0.5·(1+1/W) is the reinstatement floor. 0.3 is a backstop that, under D5,
+ an active rehab-eligible device never reaches directly — probation comes
+ first.</p>
+ <div class="numline">
+  <div class="rail"></div>
+  <div class="tick" style="left:30%"></div><div class="lab" style="left:30%">BAN_T<br>0.3</div>
+  <div class="tick" style="left:50%"></div><div class="lab" style="left:50%">PROBATION_T<br>0.5</div>
+  <div class="tick" style="left:75%"></div><div class="lab" style="left:75%">REINSTATE_T<br>0.75</div>
+  <div class="end" style="left:0">0.0</div><div class="end" style="right:0">1.0</div>
+ </div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 08 · Influence</div>
+ <h2>Trust becomes aggregation weight through the tier discount</h2>
+ <p class="claim">weight = D[tier] × trust (Jøsang discounting; weight-by-reputation
+ per Kang / RepuNet). This is now the <i>only</i> place tier enters the numbers.
+ Probation forces any suspect down to the unproven-identity cap of
+ 0.1 regardless of tier.</p>
+ <div class="figure"><canvas id="wmap"></canvas></div>
+</div>
+
+<div class="card"><div class="eyebrow">Part 09 · Reinstatement</div>
+ <h2>The trial is evidence — but with W = 2 the floor dominates</h2>
+ <p class="claim">Three probated Tier-1 devices reinstated with 0 / 6 / 9
+ credited trial rounds. Everyone clears the 0.75 floor.</p>
+ <div class="figure short"><canvas id="rein"></canvas></div>
+ <div class="flag"><b>FLAGGED DEVIATION · REINSTATE_T ↔ W coupling</b>
+ With W = 2 the reinstatement floor requires more evidence
+ (need_s = (r/(1−r))(b₀+f) − a₀ ≥ 3.8 for any f ≥ τ) than the maximum trial
+ credit θ·W_MAX = 0.4×9 = 3.6 can ever supply. So every reinstatement returns
+ at <i>exactly</i> 0.75, whatever the trial length — the v2.1 property
+ “stronger recovery returns higher” is retired. Direction is favourable
+ (recovery is never <i>too</i> generous); it is surfaced, not hidden.</div>
+</div>
+</main><footer>Generated by gen_data.py from trust/reputation.py (v3) —
+every figure is simulation output, not an illustration. Provenance grades:
+CANONICAL = a paper's own number · CONVENTIONAL = a number in common published
+use · CALIBRATED = ours, defended by the sweeps on dashboard 02. Amber panels
+flag measured deviations from the design's expected numbers.</footer><script>
+Chart.defaults.font.family='"IBM Plex Mono",monospace';
+Chart.defaults.font.size=11; Chart.defaults.color='#5F6E75';
+const C={t1:'#0E7A63',t2:'#C08A2D',t3:'#5B6FA8',bad:'#BE3E37',aux:'#2E6F8E',ink:'#1B262C'};
+function thr(v,n,color,label){return{label:label,data:Array(n).fill(v),borderColor:color||'#9AA7A3',
+  borderDash:[5,4],borderWidth:1.2,pointRadius:0,fill:false,order:99};}
+function line(id,labels,ds,o){o=o||{};return new Chart(document.getElementById(id),{type:'line',
+ data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,
+  animation:false,interaction:{mode:'index',intersect:false},
+  plugins:{legend:{labels:{boxWidth:14,boxHeight:2,filter:i=>!i.text.startsWith('_')}}},
+  scales:Object.assign({x:{title:{display:!!o.x,text:o.x||''},grid:{display:false}},
+   y:{title:{display:!!o.y,text:o.y||''},min:o.min,max:o.max,grid:{color:'#E7ECEA'}}},
+   o.y1?{y1:{position:'right',title:{display:true,text:o.y1},grid:{drawOnChartArea:false},min:o.y1min,max:o.y1max}}:{})}});}
+function bars(id,labels,ds,o){o=o||{};return new Chart(document.getElementById(id),{type:'bar',
+ data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,
+  plugins:{legend:{display:ds.length>1,labels:{boxWidth:14}}},
+  scales:{x:{grid:{display:false}},y:{min:o.min,max:o.max,grid:{color:'#E7ECEA'},
+   title:{display:!!o.y,text:o.y||''}}}}});}
+function strip(el,statuses){const host=(typeof el==='string')?document.getElementById(el):el;
+ const s=document.createElement('div');s.className='strip';
+ statuses.forEach(st=>{const d=document.createElement('div');
+  d.className=st[0];d.title=st;s.appendChild(d);});host.appendChild(s);
+ const l=document.createElement('div');l.className='striplegend';
+ l.innerHTML='STATUS PER ROUND<i style="background:var(--st-active)"></i>ACTIVE'+
+  '<i style="background:var(--st-prob)"></i>PROBATION<i style="background:var(--st-ban)"></i>BANNED';
+ host.appendChild(l);}
+function ln(d,color,label,extra){return Object.assign({label:label,data:d,borderColor:color,
+ backgroundColor:color,borderWidth:2,pointRadius:0,tension:.12,fill:false},extra||{});}
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;
+ if(html!=null)e.innerHTML=html;return e;}
+
+const D={"constants": {"tiers": [{"tier": "Tier 1 \u00b7 hardware-bound", "W": 2.0, "a": 0.5, "prior": [1.0, 1.0], "t0": 0.5, "cap": 1.0, "rehab": true, "forget": 0.95}, {"tier": "Tier 2 \u00b7 TPM-resident", "W": 2.0, "a": 0.5, "prior": [1.0, 1.0], "t0": 0.5, "cap": 0.5, "rehab": false, "forget": 0.95}, {"tier": "Tier 3 \u00b7 software-only", "W": 2.0, "a": 0.5, "prior": [1.0, 1.0], "t0": 0.5, "cap": 0.1, "rehab": false, "forget": 0.95}], "theta": 0.4, "tau": 0.6, "gamma": 0.9, "forget": 0.95, "s_max": 4.000000000000001, "trust_ceiling": 0.8333, "probation_t": 0.5, "reinstate_t": 0.75, "ban_t": 0.3, "forgive_after": 5, "major_run": 2, "probation_cap": 0.1, "first_bad_trust": 0.3846}, "strikes": {"t1": {"round": [0, 1, 2], "trust": [0.5, 0.3846, 0.3125], "f": [0.0, 0.6, 1.2], "s": [0.0, 0.0, 0.0], "u": [1.0, 0.7692, 0.625], "status": ["ACTIVE", "ACTIVE", "PROBATION"], "weight": [0.5, 0.3846, 0.0312], "event": ["START", "MAJOR", "MAJOR"]}, "t2": {"round": [0, 1, 2], "trust": [0.5, 0.3846, 0.3125], "f": [0.0, 0.6, 1.2], "s": [0.0, 0.0, 0.0], "u": [1.0, 0.7692, 0.625], "status": ["ACTIVE", "ACTIVE", "ACTIVE"], "weight": [0.25, 0.1923, 0.1562], "event": ["START", "MINOR", "MAJOR"]}, "t3": {"round": [0, 1, 2, 3, 4], "trust": [0.5, 0.3846, 0.3125, 0.2632, 0.2273], "f": [0.0, 0.6, 1.2, 1.8, 2.4], "s": [0.0, 0.0, 0.0, 0.0, 0.0], "u": [1.0, 0.7692, 0.625, 0.5263, 0.4545], "status": ["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "BANNED"], "weight": [0.05, 0.0385, 0.0312, 0.0263, 0.0], "event": ["START", "MINOR", "MINOR", "MINOR", "MINOR"]}}, "m1": {"round": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60], "trust": [0.5, 0.5833, 0.6377, 0.6757, 0.7038, 0.7251, 0.7419, 0.7553, 0.7663, 0.7753, 0.7829, 0.7892, 0.7947, 0.7993, 0.8033, 0.8068, 0.8098, 0.8125, 0.8148, 0.8168, 0.8186, 0.8202, 0.8216, 0.8229, 0.824, 0.825, 0.8258, 0.8266, 0.8273, 0.8279, 0.8285, 0.829, 0.8294, 0.8298, 0.8302, 0.8305, 0.8308, 0.831, 0.8313, 0.8315, 0.8317, 0.8318, 0.832, 0.8321, 0.8322, 0.8324, 0.8325, 0.8325, 0.8326, 0.8327, 0.8328, 0.8328, 0.8329, 0.8329, 0.833, 0.833, 0.833, 0.8331, 0.8331, 0.8331, 0.8331], "f": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "s": [0.0, 0.4, 0.76, 1.084, 1.3756, 1.638, 1.8742, 2.0868, 2.2781, 2.4503, 2.6053, 2.7448, 2.8703, 2.9833, 3.0849, 3.1764, 3.2588, 3.3329, 3.3996, 3.4597, 3.5137, 3.5623, 3.6061, 3.6455, 3.6809, 3.7128, 3.7416, 3.7674, 3.7907, 3.8116, 3.8304, 3.8474, 3.8627, 3.8764, 3.8887, 3.8999, 3.9099, 3.9189, 3.927, 3.9343, 3.9409, 3.9468, 3.9521, 3.9569, 3.9612, 3.9651, 3.9686, 3.9717, 3.9745, 3.9771, 3.9794, 3.9814, 3.9833, 3.985, 3.9865, 3.9878, 3.989, 3.9901, 3.9911, 3.992, 3.9928], "u": [1.0, 0.8333, 0.7246, 0.6485, 0.5925, 0.5497, 0.5162, 0.4894, 0.4675, 0.4494, 0.4343, 0.4215, 0.4107, 0.4013, 0.3933, 0.3864, 0.3803, 0.375, 0.3704, 0.3663, 0.3627, 0.3596, 0.3568, 0.3543, 0.3521, 0.3501, 0.3483, 0.3468, 0.3454, 0.3441, 0.343, 0.342, 0.3411, 0.3403, 0.3396, 0.339, 0.3384, 0.3379, 0.3374, 0.337, 0.3367, 0.3363, 0.336, 0.3357, 0.3355, 0.3353, 0.3351, 0.3349, 0.3348, 0.3346, 0.3345, 0.3344, 0.3343, 0.3342, 0.3341, 0.334, 0.3339, 0.3339, 0.3338, 0.3338, 0.3337], "status": ["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"], "weight": [0.5, 0.5833, 0.6377, 0.6757, 0.7038, 0.7251, 0.7419, 0.7553, 0.7663, 0.7753, 0.7829, 0.7892, 0.7947, 0.7993, 0.8033, 0.8068, 0.8098, 0.8125, 0.8148, 0.8168, 0.8186, 0.8202, 0.8216, 0.8229, 0.824, 0.825, 0.8258, 0.8266, 0.8273, 0.8279, 0.8285, 0.829, 0.8294, 0.8298, 0.8302, 0.8305, 0.8308, 0.831, 0.8313, 0.8315, 0.8317, 0.8318, 0.832, 0.8321, 0.8322, 0.8324, 0.8325, 0.8325, 0.8326, 0.8327, 0.8328, 0.8328, 0.8329, 0.8329, 0.833, 0.833, 0.833, 0.8331, 0.8331, 0.8331, 0.8331], "event": ["START", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL"]}, "m2": {"round": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26], "trust": [0.5, 0.3846, 0.4667, 0.5238, 0.5657, 0.5975, 0.6269, 0.6509, 0.6709, 0.6877, 0.7021, 0.7144, 0.7252, 0.7346, 0.7429, 0.7503, 0.7569, 0.7628, 0.7681, 0.7729, 0.7773, 0.7812, 0.7848, 0.7881, 0.7911, 0.7939, 0.7965], "f": [0.0, 0.6, 0.6, 0.6, 0.6, 0.6, 0.57, 0.5415, 0.5144, 0.4887, 0.4643, 0.4411, 0.419, 0.3981, 0.3781, 0.3592, 0.3413, 0.3242, 0.308, 0.2926, 0.278, 0.2641, 0.2509, 0.2383, 0.2264, 0.2151, 0.2043], "s": [0.0, 0.0, 0.4, 0.76, 1.084, 1.3756, 1.638, 1.8742, 2.0868, 2.2781, 2.4503, 2.6053, 2.7448, 2.8703, 2.9833, 3.0849, 3.1764, 3.2588, 3.3329, 3.3996, 3.4597, 3.5137, 3.5623, 3.6061, 3.6455, 3.6809, 3.7128], "u": [1.0, 0.7692, 0.6667, 0.5952, 0.5429, 0.5031, 0.4753, 0.4529, 0.4347, 0.4196, 0.407, 0.3963, 0.3873, 0.3796, 0.373, 0.3674, 0.3625, 0.3582, 0.3546, 0.3514, 0.3486, 0.3462, 0.344, 0.3422, 0.3406, 0.3392, 0.338], "status": ["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"], "weight": [0.5, 0.3846, 0.4667, 0.5238, 0.5657, 0.5975, 0.6269, 0.6509, 0.6709, 0.6877, 0.7021, 0.7144, 0.7252, 0.7346, 0.7429, 0.7503, 0.7569, 0.7628, 0.7681, 0.7729, 0.7773, 0.7812, 0.7848, 0.7881, 0.7911, 0.7939, 0.7965], "event": ["START", "MAJOR", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL"]}, "m2_forgive_after": 5, "m3": {"round": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42], "trust": [0.5, 0.5833, 0.6377, 0.6757, 0.7038, 0.7251, 0.7419, 0.7553, 0.7663, 0.7753, 0.7829, 0.7892, 0.7947, 0.7993, 0.8033, 0.8068, 0.8098, 0.8125, 0.8148, 0.8168, 0.8186, 0.8202, 0.8216, 0.8229, 0.824, 0.825, 0.8258, 0.8266, 0.8273, 0.8279, 0.8285, 0.829, 0.8294, 0.8298, 0.8302, 0.8305, 0.8308, 0.831, 0.8313, 0.8315, 0.8317, 0.7397, 0.6558], "f": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6, 1.2], "s": [0.0, 0.4, 0.76, 1.084, 1.3756, 1.638, 1.8742, 2.0868, 2.2781, 2.4503, 2.6053, 2.7448, 2.8703, 2.9833, 3.0849, 3.1764, 3.2588, 3.3329, 3.3996, 3.4597, 3.5137, 3.5623, 3.6061, 3.6455, 3.6809, 3.7128, 3.7416, 3.7674, 3.7907, 3.8116, 3.8304, 3.8474, 3.8627, 3.8764, 3.8887, 3.8999, 3.9099, 3.9189, 3.927, 3.9343, 3.9409, 3.5468, 3.1921], "u": [1.0, 0.8333, 0.7246, 0.6485, 0.5925, 0.5497, 0.5162, 0.4894, 0.4675, 0.4494, 0.4343, 0.4215, 0.4107, 0.4013, 0.3933, 0.3864, 0.3803, 0.375, 0.3704, 0.3663, 0.3627, 0.3596, 0.3568, 0.3543, 0.3521, 0.3501, 0.3483, 0.3468, 0.3454, 0.3441, 0.343, 0.342, 0.3411, 0.3403, 0.3396, 0.339, 0.3384, 0.3379, 0.3374, 0.337, 0.3367, 0.3254, 0.3129], "status": ["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "PROBATION"], "weight": [0.5, 0.5833, 0.6377, 0.6757, 0.7038, 0.7251, 0.7419, 0.7553, 0.7663, 0.7753, 0.7829, 0.7892, 0.7947, 0.7993, 0.8033, 0.8068, 0.8098, 0.8125, 0.8148, 0.8168, 0.8186, 0.8202, 0.8216, 0.8229, 0.824, 0.825, 0.8258, 0.8266, 0.8273, 0.8279, 0.8285, 0.829, 0.8294, 0.8298, 0.8302, 0.8305, 0.8308, 0.831, 0.8313, 0.8315, 0.8317, 0.7397, 0.0656], "event": ["START", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "MAJOR", "MAJOR"]}, "m3_veteran_trust_at_ban": 0.6558, "gate": {"noise": {"round": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "trust": [0.5, 0.3846, 0.4667, 0.5238, 0.5657, 0.5975, 0.6269, 0.6509, 0.6709, 0.6877, 0.7021], "f": [0.0, 0.6, 0.6, 0.6, 0.6, 0.6, 0.57, 0.5415, 0.5144, 0.4887, 0.4643], "s": [0.0, 0.0, 0.4, 0.76, 1.084, 1.3756, 1.638, 1.8742, 2.0868, 2.2781, 2.4503], "u": [1.0, 0.7692, 0.6667, 0.5952, 0.5429, 0.5031, 0.4753, 0.4529, 0.4347, 0.4196, 0.407], "status": ["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"], "weight": [0.5, 0.3846, 0.4667, 0.5238, 0.5657, 0.5975, 0.6269, 0.6509, 0.6709, 0.6877, 0.7021], "event": ["START", "MINOR", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL", "NEUTRAL"]}, "attacker": {"round": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "trust": [0.5, 0.3846, 0.3125, 0.2632, 0.2273, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], "f": [0.0, 0.6, 1.2, 1.8, 2.4, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0], "s": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "u": [1.0, 0.7692, 0.625, 0.5263, 0.4545, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4], "status": ["ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "PROBATION", "BANNED", "BANNED", "BANNED", "BANNED", "BANNED", "BANNED"], "weight": [0.5, 0.3846, 0.3125, 0.2632, 0.0227, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "event": ["START", "MINOR", "MINOR", "MINOR", "MINOR", "MINOR", "MINOR", "MINOR", "MINOR", "MINOR", "MINOR"]}, "exit_round": 6, "open_at": 4, "sanction_at": 4, "W": 2.0}, "weightmap": {"trust": [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96, 0.98, 1.0], "t1": [0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36, 0.38, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96, 0.98, 1.0], "t2": [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5], "t3": [0.0, 0.002, 0.004, 0.006, 0.008, 0.01, 0.012, 0.014, 0.016, 0.018, 0.02, 0.022, 0.024, 0.026, 0.028, 0.03, 0.032, 0.034, 0.036, 0.038, 0.04, 0.042, 0.044, 0.046, 0.048, 0.05, 0.052, 0.054, 0.056, 0.058, 0.06, 0.062, 0.064, 0.066, 0.068, 0.07, 0.072, 0.074, 0.076, 0.078, 0.08, 0.082, 0.084, 0.086, 0.088, 0.09, 0.092, 0.094, 0.096, 0.098, 0.1], "probation": [0.0, 0.002, 0.004, 0.006, 0.008, 0.01, 0.012, 0.014, 0.016, 0.018, 0.02, 0.022, 0.024, 0.026, 0.028, 0.03, 0.032, 0.034, 0.036, 0.038, 0.04, 0.042, 0.044, 0.046, 0.048, 0.05, 0.052, 0.054, 0.056, 0.058, 0.06, 0.062, 0.064, 0.066, 0.068, 0.07, 0.072, 0.074, 0.076, 0.078, 0.08, 0.082, 0.084, 0.086, 0.088, 0.09, 0.092, 0.094, 0.096, 0.098, 0.1]}, "reinstate": {"floor": 0.75, "cases": [{"credit": 0, "trust_back": 0.75}, {"credit": 6, "trust_back": 0.75}, {"credit": 9, "trust_back": 0.75}]}};
+
+const K=D.strikes, c=D.constants;
+line('p1',K.t1.round,[ln(K.t1.trust,C.t1,'Tier 1 · MAJOR ×2'),thr(0.5,K.t1.round.length,C.bad,'_')],{min:.2,max:.6,x:'round',y:'trust'});
+strip('s1',K.t1.status);
+line('p2',K.t2.round,[ln(K.t2.trust,C.t2,'Tier 2 · MINOR, MAJOR'),thr(0.5,K.t2.round.length,C.bad,'_')],{min:.2,max:.6,x:'round',y:'trust'});
+strip('s2',K.t2.status);
+line('p3',K.t3.round,[ln(K.t3.trust,C.t3,'Tier 3 · MINOR ×4'),thr(0.5,K.t3.round.length,C.bad,'_')],{min:.2,max:.6,x:'round',y:'trust'});
+strip('s3',K.t3.status);
+line('m1',D.m1.round,[ln(D.m1.trust,C.t1,'trust (60 clean rounds)'),
+ thr(c.trust_ceiling,D.m1.round.length,C.ink,'ceiling = '+c.trust_ceiling)],{min:.45,max:.9,x:'round',y:'trust'});
+line('m2',D.m2.round,[ln(D.m2.f,C.bad,'penalty evidence f'),
+ ln(D.m2.trust,C.t1,'trust',{yAxisID:'y1'})],
+ {x:'round',y:'penalty f',y1:'trust',min:0,max:.8,y1min:.3,y1max:.9});
+line('m3',D.m3.round,[ln(D.m3.trust,C.t1,'veteran trust'),
+ thr(0.5,D.m3.round.length,C.bad,'PROBATION_T')],{min:.3,max:.9,x:'round',y:'trust'});
+strip('s5',D.m3.status);
+const gn=D.gate.noise, ga=D.gate.attacker;
+line('gn',gn.round,[ln(gn.u,C.aux,'uncertainty u'),thr(0.5,gn.round.length,C.ink,'gate: u=0.5'),
+ ln(gn.trust,C.t1,'trust',{yAxisID:'y1'})],{x:'round',y:'u',y1:'trust',min:0,max:1,y1min:.2,y1max:.9});
+strip('sgn',gn.status);
+line('ga',ga.round,[ln(ga.u,C.aux,'uncertainty u'),thr(0.5,ga.round.length,C.ink,'gate: u=0.5'),
+ ln(ga.trust,C.bad,'trust',{yAxisID:'y1'})],{x:'round',y:'u',y1:'trust',min:0,max:1,y1min:.2,y1max:.9});
+strip('sga',ga.status);
+const W=D.weightmap;
+line('wmap',W.trust,[ln(W.t1,C.t1,'Tier 1 (D=1.0)'),ln(W.t2,C.t2,'Tier 2 (D=0.5)'),
+ ln(W.t3,C.t3,'Tier 3 (D=0.1)'),ln(W.probation,C.bad,'any tier on probation',{borderDash:[5,4]})],
+ {x:'trust',y:'aggregation weight',min:0,max:1});
+bars('rein',D.reinstate.cases.map(c=>c.credit+' trial rounds'),
+ [{label:'trust on return',data:D.reinstate.cases.map(c=>c.trust_back),
+   backgroundColor:[C.t3,C.aux,C.t1],borderRadius:3}],
+ {min:.5,max:.9,y:'trust on return (floor '+D.reinstate.floor+')'});
+
+</script></body></html>
